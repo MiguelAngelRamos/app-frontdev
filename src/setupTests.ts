@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import { vi } from 'vitest';
 
 // Mock para archivos estáticos (imágenes, SVG, etc.)
 vi.mock('./assets/react.svg', () => ({
