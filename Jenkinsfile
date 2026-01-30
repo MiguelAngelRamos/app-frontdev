@@ -9,20 +9,31 @@ pipeline {
 
     stages {
         stage('1. Checkout') {
-            steps { checkout scm }
+            steps {
+                checkout scm
+            }
         }
 
         stage('2. Install & Test') {
-            // Usamos una imagen de Node temporal solo para correr tests rápidos
-            agent { docker { image 'node:20-alpine' } }
+            agent {
+                docker { 
+                    image 'node:20-alpine' 
+                    // Se agrega --entrypoint="" para permitir que Jenkins ejecute comandos sh
+                    // y se mapea la caché de npm para evitar problemas de permisos
+                    args '-v $HOME/.npm:/root/.npm --entrypoint=""' 
+                }
+            }
             steps {
+                echo "Construyendo rama: ${env.BRANCH_NAME}"
+                // Forzamos a npm a usar una carpeta local de caché para evitar el error EACCES
+                sh 'npm config set cache .npm-cache --global'
                 sh 'npm install'
-                sh 'npm run test' // ¡AQUÍ SE EJECUTAN LOS TESTS!
+                sh 'npm run test:run' // Usamos test:run basado en tu package.json
+                sh 'npm run build'
             }
         }
 
         stage('3. Build Docker Image') {
-            // Solo construimos imagen si estamos en develop o main
             when {
                 anyOf { branch 'develop'; branch 'main' }
             }
@@ -59,6 +70,8 @@ pipeline {
     }
     
     post {
-        always { cleanWs() }
+        always {
+            cleanWs()
+        }
     }
 }
