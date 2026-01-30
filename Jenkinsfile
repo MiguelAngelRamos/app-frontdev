@@ -18,18 +18,16 @@ pipeline {
             agent {
                 docker { 
                     image 'node:20-alpine' 
-                    // Se agrega --entrypoint="" para permitir que Jenkins ejecute comandos sh
-                    // y se mapea la caché de npm para evitar problemas de permisos
-                    args '-v $HOME/.npm:/root/.npm --entrypoint=""' 
+                    // Quitamos el mapeo de $HOME para simplificar y evitar conflictos
+                    args '--entrypoint=""' 
                 }
             }
             steps {
                 echo "Construyendo rama: ${env.BRANCH_NAME}"
-                // Forzamos a npm a usar una carpeta local de caché para evitar el error EACCES
-                sh 'npm config set cache .npm-cache --global'
-                sh 'npm install'
-                sh 'npm run test:run' // Usamos test:run basado en tu package.json
-                sh 'npm run build'
+                // Usamos la bandera --cache local en cada comando en lugar de set global
+                sh 'npm install --cache .npm-cache'
+                sh 'npm run test:run --cache .npm-cache'
+                sh 'npm run build --cache .npm-cache'
             }
         }
 
